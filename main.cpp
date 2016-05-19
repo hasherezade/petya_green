@@ -7,12 +7,14 @@
 #include "salsa20.h"
 #include "petya.h"
 
+#define VERBOSE 0
+
 bool make_random_key(char* key)
 {
     size_t charset_len = strlen(KEY_CHARSET);
 
     memset(key, 'x', KEY_SIZE);
-    
+
     for (int i = i; i < KEY_SIZE; i+=4) {
         size_t rand_i1 = rand() % charset_len;
         size_t rand_i2 = rand() % charset_len;
@@ -58,21 +60,25 @@ int main(int argc, char *argv[])
     char p_key[KEY_SIZE+1];
     char *key = p_key;
     bool make_random = false;
-    
+
     if (argc >= 3) {
         key = argv[2];
     } else {
         printf("The key will be random!\n");
         srand(time(NULL));
         make_random = true;
+        printf("Please wait, searching key is in progress...\n");
     }
 
     char veribuf_test[VERIBUF_SIZE];
     memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
     bool matches = false;
     do {
-        if (make_random) make_random_key(key);
-        printf("Key: %s\n", key);
+        if (make_random)
+            make_random_key(key);
+
+        if (VERBOSE)
+            printf("Key: %s\n", key);
 
         memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
 
