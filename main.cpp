@@ -87,13 +87,14 @@ int main(int argc, char *argv[])
             return -1;
         }
         if (is_valid(veribuf_test)) {
-            printf("\ndecoded data:\n");
-            hexdump(veribuf_test, VERIBUF_SIZE);
             matches = true;
             break;
         }
 
     } while (!is_valid(veribuf_test) && make_random);
+
+    printf("\ndecoded data:\n");
+    hexdump(veribuf_test, VERIBUF_SIZE);
 
     if (matches) {
         printf("[+] %s is a valid key!\n", key);
