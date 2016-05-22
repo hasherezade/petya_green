@@ -16,8 +16,10 @@ bool make_random_key(char* key)
     memset(key, 'x', KEY_SIZE);
 
     for (int i = i; i < KEY_SIZE; i+=4) {
-        size_t rand_i1 = rand() % charset_len;
-        size_t rand_i2 = rand() % charset_len;
+        static size_t rand_i1 = 0;
+        static size_t rand_i2 = 0;
+        rand_i1 = (rand_i1 + rand()) % charset_len;
+        rand_i2 = (rand_i2 + rand()) % charset_len;
         key[i] = KEY_CHARSET[rand_i1];
         key[i+1] = KEY_CHARSET[rand_i2];
     }
@@ -54,17 +56,19 @@ int main(int argc, char *argv[])
     hexdump(veribuf, VERIBUF_SIZE);
 
     printf("nonce:\n");
-    hexdump(nonce,NONCE_SIZE);
+    hexdump(nonce, NONCE_SIZE);
     printf("---\n");
 
     char p_key[KEY_SIZE+1];
     char *key = p_key;
     bool make_random = false;
+    size_t veri_size = VERIBUF_SIZE;
 
     if (argc >= 3) {
         key = argv[2];
     } else {
         printf("The key will be random!\n");
+        veri_size = 8; //the size that will be encrypted during tests
         srand(time(NULL));
         make_random = true;
         printf("Please wait, searching key is in progress...\n");
@@ -81,17 +85,31 @@ int main(int argc, char *argv[])
             printf("Key: %s\n", key);
 
         memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
-
-        if (s20_crypt((uint8_t *) key, S20_KEYLEN_128, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, VERIBUF_SIZE) == S20_FAILURE) {
+        if (s20_crypt((uint8_t *) key, S20_KEYLEN_128, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, veri_size) == S20_FAILURE) {
             puts("Error: encryption failed");
             return -1;
         }
-        if (is_valid(veribuf_test)) {
-            matches = true;
-            break;
+        if (is_valid(veribuf_test, veri_size)) {
+            if (veri_size == VERIBUF_SIZE) { //full length already checked
+                matches = true;
+                break;
+            }
+            printf("[*] Key candidate: %s\n", key);
+            memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
+            if (s20_crypt((uint8_t *) key, S20_KEYLEN_128, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, VERIBUF_SIZE) == S20_FAILURE) {
+                puts("Error: encryption failed");
+                return -1;
+            }
+            if (is_valid(veribuf_test, VERIBUF_SIZE)) {
+                printf("[+] Doublecheck passed\n");
+                matches = true;
+                break;
+            } else {
+                printf("[-] Doublecheck failed, searching again...\n");
+            }
         }
 
-    } while (!is_valid(veribuf_test) && make_random);
+    } while (make_random);
 
     printf("\ndecoded data:\n");
     hexdump(veribuf_test, VERIBUF_SIZE);

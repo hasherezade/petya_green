@@ -27,7 +27,7 @@ bool is_infected(FILE *fp)
 
 char* fetch_veribuf(FILE *fp)
 {
-    size_t offset = VERIBUF_SECTOR_NUM * SECTOR_SIZE;  
+    size_t offset = VERIBUF_SECTOR_NUM * SECTOR_SIZE;
     return fetch_data(fp, offset, VERIBUF_SIZE);
 }
 
@@ -37,9 +37,12 @@ char* fetch_nonce(FILE *fp)
     return fetch_data(fp, offset, NONCE_SIZE);
 }
 
-bool is_valid(char *veribuf)
+bool is_valid(char *veribuf, size_t veri_size = VERIBUF_SIZE)
 {
-    for (size_t i = 0; i < VERIBUF_SIZE; i++) {
+    veri_size = (veri_size > VERIBUF_SIZE) ? VERIBUF_SIZE : veri_size;
+    veri_size = (veri_size == 0) ? 1 : veri_size;
+
+    for (size_t i = 0; i < veri_size; i++) {
         if (veribuf[i] != VERIFICATION_CHAR) return false;
     }
     return true;

@@ -5,7 +5,7 @@
 #define SECTOR_SIZE 0x200
 #define NONCE_OFFSET 0x21
 
-#define VERIBUF_SIZE 16 //truncated version
+#define VERIBUF_SIZE SECTOR_SIZE
 #define NONCE_SIZE 8
 
 #define VERIBUF_SECTOR_NUM 55
@@ -15,10 +15,9 @@
 
 #define KEY_SIZE 16
 const char KEY_CHARSET[] = "123456789abcdefghijkmnopqrstuvwxABCDEFGHJKLMNPQRSTUVWX";
-
 bool is_infected(FILE *fp);
 
 char* fetch_veribuf(FILE *fp);
 char* fetch_nonce(FILE *fp);
 
-bool is_valid(char* veribuf);
+bool is_valid(char* veribuf, size_t veri_size);
