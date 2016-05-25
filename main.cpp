@@ -15,7 +15,7 @@ bool make_random_key(char* key)
 
     memset(key, 'x', KEY_SIZE);
 
-    for (int i = i; i < KEY_SIZE; i+=4) {
+    for (int i = 0; i < KEY_SIZE; i+=4) {
         static size_t rand_i1 = 0;
         static size_t rand_i2 = 0;
         rand_i1 = (rand_i1 + rand()) % charset_len;
