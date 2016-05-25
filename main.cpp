@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         key = argv[2];
     } else {
         printf("The key will be random!\n");
-        veri_size = 2; //the size that will be encrypted during tests
+        veri_size = 8; //the size that will be encrypted during tests
         srand(time(NULL));
         make_random = true;
         printf("Please wait, searching key is in progress...\n");
