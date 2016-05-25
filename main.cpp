@@ -9,10 +9,13 @@
 
 #define VERBOSE 0
 
-bool make_random_key(char* key)
+bool make_random_key(char* key, size_t buf_size)
 {
-    size_t charset_len = strlen(KEY_CHARSET);
+    if (key == NULL || buf_size < KEY_SIZE) {
+        return false;
+    }
 
+    size_t charset_len = strlen(KEY_CHARSET);
     memset(key, 'x', KEY_SIZE);
 
     for (int i = 0; i < KEY_SIZE; i+=4) {
@@ -24,6 +27,7 @@ bool make_random_key(char* key)
         key[i+1] = KEY_CHARSET[rand_i2];
     }
     key[KEY_SIZE] = 0;
+    return true;
 }
 
 int main(int argc, char *argv[])
@@ -68,7 +72,7 @@ int main(int argc, char *argv[])
         key = argv[2];
     } else {
         printf("The key will be random!\n");
-        veri_size = 8; //the size that will be encrypted during tests
+        veri_size = 2; //the size that will be encrypted during tests
         srand(time(NULL));
         make_random = true;
         printf("Please wait, searching key is in progress...\n");
@@ -78,8 +82,11 @@ int main(int argc, char *argv[])
     memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
     bool matches = false;
     do {
-        if (make_random)
-            make_random_key(key);
+
+        if (make_random){
+            if (make_random_key(p_key, sizeof(p_key)) == false)
+                return -1;
+        }
 
         if (VERBOSE)
             printf("Key: %s\n", key);
