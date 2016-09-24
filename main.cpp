@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
     char veribuf_test[VERIBUF_SIZE];
     memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
     bool matches = false;
+    size_t unmatching;
     do {
 
         if (make_random){
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
             puts("Error: encryption failed");
             return -1;
         }
-        if (is_valid(veribuf_test, veri_size)) {
+        if ((unmatching = count_unmatching(veribuf_test, veri_size)) == 0) {
             if (veri_size == VERIBUF_SIZE) { //full length already checked
                 matches = true;
                 break;
@@ -107,20 +108,21 @@ int main(int argc, char *argv[])
                 puts("Error: encryption failed");
                 return -1;
             }
-            if (is_valid(veribuf_test, VERIBUF_SIZE)) {
+            if ((unmatching = count_unmatching(veribuf_test, VERIBUF_SIZE)) == 0) {
                 printf("[+] Doublecheck passed\n");
                 matches = true;
                 break;
             } else {
                 printf("[-] Doublecheck failed, searching again...\n");
             }
+            printf("unmatching: %d\n", unmatching);
         }
 
     } while (make_random);
 
     printf("\ndecoded data:\n");
     hexdump(veribuf_test, VERIBUF_SIZE);
-
+    printf("unmatching: %d\n", unmatching);
     if (matches) {
         printf("[+] %s is a valid key!\n", key);
         return 0;

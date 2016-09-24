@@ -20,4 +20,4 @@ bool is_infected(FILE *fp);
 char* fetch_veribuf(FILE *fp);
 char* fetch_nonce(FILE *fp);
 
-bool is_valid(char* veribuf, size_t veri_size);
+size_t count_unmatching(char* veribuf, size_t veri_size);
