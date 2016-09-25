@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project (petya_green)
+project (petya_red)
 
 set (hdrs
     petya.h
@@ -34,5 +34,5 @@ IF (OUT_32BIT)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -m32" CACHE STRING "c flags")
 ENDIF(OUT_32BIT)
 
-add_executable (petya_green ${hdrs} ${srcs})
+add_executable (petya_red ${hdrs} ${srcs})
 

@@ -3,31 +3,70 @@
 
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
+#include <vector>
+#include <string>
 
 #include "salsa20.h"
 #include "petya.h"
 
 #define VERBOSE 0
+#define EXPANDED_KEY_LENGTH 32
 
-bool make_random_key(char* key, size_t buf_size)
+bool makeUserKey(char* key, size_t buf_size)
 {
-    if (key == NULL || buf_size < KEY_SIZE) {
+    const size_t user_key_size = KEY_SIZE/2;
+    if (key == NULL || buf_size < user_key_size) {
         return false;
     }
 
     size_t charset_len = strlen(KEY_CHARSET);
-    memset(key, 'x', KEY_SIZE);
+    memset(key, 'x', user_key_size);
 
-    for (int i = 0; i < KEY_SIZE; i+=4) {
+    for (int i = 0; i < KEY_SIZE; i+=2) {
         static size_t rand_i1 = 0;
         static size_t rand_i2 = 0;
         rand_i1 = (rand_i1 + rand()) % charset_len;
-        rand_i2 = (rand_i2 + rand()) % charset_len;
         key[i] = KEY_CHARSET[rand_i1];
-        key[i+1] = KEY_CHARSET[rand_i2];
     }
-    key[KEY_SIZE] = 0;
+    key[user_key_size] = 0;
+
     return true;
+}
+
+bool makeFullPetyaKey(char* key, size_t buf_size, std::string cleanKey16)
+{
+    if (buf_size < EXPANDED_KEY_LENGTH) {
+        printf("Buffer is too small\n");
+        return false;
+    }
+    if (cleanKey16.size() * 2 != EXPANDED_KEY_LENGTH) {
+        printf("Invalid key\n");
+        return false;
+    }
+    for (unsigned i = 0; i < cleanKey16.size(); ++i) {
+        key[i * 2 + 0] = uint8_t(cleanKey16[i]) + 0x7a;
+        key[i * 2 + 1] = uint8_t(cleanKey16[i]) * 2;
+    }
+    return true;
+}
+
+std::string petyaKeyToUserKey(char *key)
+{
+    size_t userKeyLen = KEY_SIZE/2;
+    char userKey[userKeyLen + 1];
+    for (size_t i = 0, j = 0; i < KEY_SIZE; i+=2, j++) {
+        userKey[j] = key[i] - 0x7a;
+    }
+    userKey[userKeyLen] = 0;
+    return userKey;
+}
+
+bool make_random_key(char* key, size_t buf_size)
+{
+    char userKey[KEY_SIZE];
+    if (!makeUserKey(userKey, buf_size)) return false;
+
+    return makeFullPetyaKey(key, buf_size, userKey);
 }
 
 int main(int argc, char *argv[])
@@ -69,10 +108,13 @@ int main(int argc, char *argv[])
     size_t veri_size = VERIBUF_SIZE;
 
     if (argc >= 3) {
-        key = argv[2];
+        makeFullPetyaKey(p_key, sizeof(p_key), argv[2]);
+        std::string userKey = petyaKeyToUserKey(key);
+        printf("Key:\n%s\n", userKey.c_str());
+        hexdump(p_key, KEY_SIZE);
     } else {
         printf("The key will be random!\n");
-        veri_size = 8; //the size that will be encrypted during tests
+        veri_size = 3; //the size that will be encrypted during tests
         srand(time(NULL));
         make_random = true;
         printf("Please wait, searching key is in progress...\n");
@@ -88,12 +130,8 @@ int main(int argc, char *argv[])
             if (make_random_key(p_key, sizeof(p_key)) == false)
                 return -1;
         }
-
-        if (VERBOSE)
-            printf("Key: %s\n", key);
-
         memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
-        if (s20_crypt((uint8_t *) key, S20_KEYLEN_128, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, veri_size) == S20_FAILURE) {
+        if (!s20_crypt_256bit((uint8_t *) key, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, VERIBUF_SIZE)) {
             puts("Error: encryption failed");
             return -1;
         }
@@ -102,9 +140,12 @@ int main(int argc, char *argv[])
                 matches = true;
                 break;
             }
-            printf("[*] Key candidate: %s\n", key);
+
+            std::string userKey = petyaKeyToUserKey(key);
+            printf("[*] Key candidate: %s\n", userKey.c_str());
+
             memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
-            if (s20_crypt((uint8_t *) key, S20_KEYLEN_128, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, VERIBUF_SIZE) == S20_FAILURE) {
+            if (!s20_crypt_256bit((uint8_t *) key, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, VERIBUF_SIZE)) {
                 puts("Error: encryption failed");
                 return -1;
             }
@@ -123,11 +164,13 @@ int main(int argc, char *argv[])
     printf("\ndecoded data:\n");
     hexdump(veribuf_test, VERIBUF_SIZE);
     printf("unmatching: %d\n", unmatching);
+
+    std::string userKey = petyaKeyToUserKey(key);
     if (matches) {
-        printf("[+] %s is a valid key!\n", key);
+        printf("[+] %s is a valid key!\n", userKey.c_str());
         return 0;
     } else {
-        printf("[-] %s is NOT a valid key!\n", key);
+        printf("[-] %s is NOT a valid key!\n", userKey.c_str());
     }
     return -1;
 }

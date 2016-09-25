@@ -11,9 +11,9 @@
 #define VERIBUF_SECTOR_NUM 55
 #define ONION_SECTOR_NUM 54
 
-#define VERIFICATION_CHAR 0x7
+#define VERIFICATION_CHAR 0x37
 
-#define KEY_SIZE 16
+#define KEY_SIZE 32
 const char KEY_CHARSET[] = "123456789abcdefghijkmnopqrstuvwxABCDEFGHJKLMNPQRSTUVWX";
 bool is_infected(FILE *fp);
 
