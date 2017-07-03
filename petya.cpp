@@ -25,6 +25,16 @@ bool is_infected(FILE *fp)
     return has_bootloader || has_http;
 }
 
+bool is_encrypted(FILE *fp)
+{
+    size_t offset = ONION_SECTOR_NUM * SECTOR_SIZE + FLAG_OFFSET;
+    char* flag = fetch_data(fp, offset, 1);
+    char val = *flag;
+    delete[]flag;
+    if (val == 0) return false;
+    return true;
+}
+
 char* fetch_veribuf(FILE *fp)
 {
     size_t offset = VERIBUF_SECTOR_NUM * SECTOR_SIZE;
@@ -35,6 +45,13 @@ char* fetch_nonce(FILE *fp)
 {
     size_t offset = ONION_SECTOR_NUM * SECTOR_SIZE + NONCE_OFFSET;
     return fetch_data(fp, offset, NONCE_SIZE);
+}
+
+//fetch the key - if it was not erased yet:
+char* fetch_key(FILE *fp)
+{
+    size_t offset = ONION_SECTOR_NUM * SECTOR_SIZE + KEY_OFFSET;
+    return fetch_data(fp, offset, KEY_SIZE);
 }
 
 size_t count_unmatching(char *veribuf, size_t veri_size = VERIBUF_SIZE)

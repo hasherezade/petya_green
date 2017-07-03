@@ -49,6 +49,11 @@ int main(int argc, char *argv[])
         printf("[-] Petya not found on the disk!\n");
         return -1;
     }
+    bool disk_encrypted = true;
+    if (!is_encrypted(fp)) {
+        printf("[*] The disk is not encrypted.\n");
+        disk_encrypted = false;
+    }
     char* veribuf = fetch_veribuf(fp);
     char* nonce = fetch_nonce(fp);
     if (!nonce || !veribuf) {
@@ -68,62 +73,49 @@ int main(int argc, char *argv[])
     bool make_random = false;
     size_t veri_size = VERIBUF_SIZE;
 
-    if (argc >= 3) {
-        key = argv[2];
+    if (!disk_encrypted) {
+        key = fetch_key(fp);
+        printf("key:\n");
+        hexdump(key, KEY_SIZE);
+        printf("---\n");
     } else {
-        printf("The key will be random!\n");
-        veri_size = 8; //the size that will be encrypted during tests
-        srand(time(NULL));
-        make_random = true;
-        printf("Please wait, searching key is in progress...\n");
+        if (argc >= 3) {
+            key = argv[2];
+        } else {
+            printf("The key will be random!\n");
+            veri_size = 8; //the size that will be encrypted during tests
+            srand(time(NULL));
+            make_random = true;
+            printf("Please wait, searching key is in progress...\n");
+        }
     }
 
     char veribuf_test[VERIBUF_SIZE];
     memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
     bool matches = false;
-    size_t unmatching;
-    do {
+    size_t unmatching = 0;
 
-        if (make_random){
-            if (make_random_key(p_key, sizeof(p_key)) == false)
-                return -1;
-        }
-
-        if (VERBOSE)
-            printf("Key: %s\n", key);
-
-        memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
-        if (s20_crypt((uint8_t *) key, S20_KEYLEN_128, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, veri_size) == S20_FAILURE) {
-            puts("Error: encryption failed");
-            return -1;
-        }
-        if ((unmatching = count_unmatching(veribuf_test, veri_size)) == 0) {
-            if (veri_size == VERIBUF_SIZE) { //full length already checked
-                matches = true;
-                break;
-            }
-            printf("[*] Key candidate: %s\n", key);
-            memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
-            if (s20_crypt((uint8_t *) key, S20_KEYLEN_128, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, VERIBUF_SIZE) == S20_FAILURE) {
-                puts("Error: encryption failed");
-                return -1;
-            }
-            if ((unmatching = count_unmatching(veribuf_test, VERIBUF_SIZE)) == 0) {
-                printf("[+] Doublecheck passed\n");
-                matches = true;
-                break;
-            } else {
-                printf("[-] Doublecheck failed, searching again...\n");
-            }
-            printf("unmatching: %d\n", unmatching);
-        }
-
-    } while (make_random);
-
+    memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
+    if (s20_crypt((uint8_t *) key, S20_KEYLEN_256, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, veri_size) == S20_FAILURE) {
+        puts("Error: encryption failed");
+        return -1;
+    }
+    unmatching = count_unmatching(veribuf_test, veri_size);
     printf("\ndecoded data:\n");
     hexdump(veribuf_test, VERIBUF_SIZE);
     printf("unmatching: %d\n", unmatching);
-    if (matches) {
+
+    printf("Test back:\n");
+
+    if (s20_crypt((uint8_t *) key, S20_KEYLEN_256, (uint8_t *) nonce, 0, (uint8_t *) veribuf_test, veri_size) == S20_FAILURE) {
+        puts("Error: encryption failed");
+        return -1;
+    }
+    unmatching = count_unmatching(veribuf_test, veri_size);
+    printf("\ndecoded data:\n");
+    hexdump(veribuf_test, VERIBUF_SIZE);
+    printf("unmatching: %d\n", unmatching);
+    if (unmatching == 0) {
         printf("[+] %s is a valid key!\n", key);
         return 0;
     } else {
