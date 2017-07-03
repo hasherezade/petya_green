@@ -102,11 +102,12 @@ static void s20_expand32(uint8_t *k,
                          uint8_t keystream[64])
 {
   int i, j;
+// "-1nvalid s3ct-id"
   uint8_t o[4][4] = {
-    { 'e', 'x', 'p', 'a' },
-    { 'n', 'd', ' ', '3' },
-    { '2', '-', 'b', 'y' },
-    { 't', 'e', ' ', 'k' }
+    { '-', '1', 'n', 'v' },
+    { 'a', 'l', 'i', 'd' },
+    { ' ', 's', '3', 'c' },
+    { 't', '-', 'i', 'd' }
   };
 
   for (i = 0; i < 64; i += 20)

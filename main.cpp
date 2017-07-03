@@ -9,27 +9,6 @@
 
 #define VERBOSE 0
 
-bool make_random_key(char* key, size_t buf_size)
-{
-    if (key == NULL || buf_size < KEY_SIZE) {
-        return false;
-    }
-
-    size_t charset_len = strlen(KEY_CHARSET);
-    memset(key, 'x', KEY_SIZE);
-
-    for (int i = 0; i < KEY_SIZE; i+=4) {
-        static size_t rand_i1 = 0;
-        static size_t rand_i2 = 0;
-        rand_i1 = (rand_i1 + rand()) % charset_len;
-        rand_i2 = (rand_i2 + rand()) % charset_len;
-        key[i] = KEY_CHARSET[rand_i1];
-        key[i+1] = KEY_CHARSET[rand_i2];
-    }
-    key[KEY_SIZE] = 0;
-    return true;
-}
-
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
@@ -46,8 +25,8 @@ int main(int argc, char *argv[])
     if (is_infected(fp)) {
         printf("[+] Petya FOUND on the disk!\n");
     } else {
-        printf("[-] Petya not found on the disk!\n");
-        return -1;
+        //TODO: add signature for EternalPetya
+        //return -1;
     }
     bool disk_encrypted = true;
     if (!is_encrypted(fp)) {
