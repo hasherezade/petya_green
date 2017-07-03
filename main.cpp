@@ -9,6 +9,14 @@
 
 #define VERBOSE 0
 
+char* weaken_key(char *key) {
+    for (size_t i = 2; i < KEY_SIZE; i+=4) {
+        key[i] = 0;
+        key[i+1] = 0;
+    }
+    return key;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
@@ -49,7 +57,7 @@ int main(int argc, char *argv[])
 
     char p_key[KEY_SIZE+1];
     char *key = p_key;
-    bool make_random = false;
+
     size_t veri_size = VERIBUF_SIZE;
 
     if (!disk_encrypted) {
@@ -61,7 +69,10 @@ int main(int argc, char *argv[])
         printf("Please supply the disk dump BEFORE the encryption\n");
         return -1;
     }
-
+    key = weaken_key(key);
+    printf("wakened key (16 out of 32 bytes matters):\n");
+    hexdump(key, KEY_SIZE);
+    printf("---\n");
     char veribuf_test[VERIBUF_SIZE];
     memcpy(veribuf_test, veribuf, VERIBUF_SIZE);
     bool matches = false;
@@ -88,10 +99,7 @@ int main(int argc, char *argv[])
     hexdump(veribuf_test, VERIBUF_SIZE);
     printf("unmatching: %d\n", unmatching);
     if (unmatching == 0) {
-        printf("[+] %s is a valid key!\n", key);
-        return 0;
-    } else {
-        printf("[-] %s is NOT a valid key!\n", key);
+        printf("[+] Coding/decoding OK.\n", key);
     }
     return -1;
 }
