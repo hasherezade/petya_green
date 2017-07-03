@@ -58,15 +58,8 @@ int main(int argc, char *argv[])
         hexdump(key, KEY_SIZE);
         printf("---\n");
     } else {
-        if (argc >= 3) {
-            key = argv[2];
-        } else {
-            printf("The key will be random!\n");
-            veri_size = 8; //the size that will be encrypted during tests
-            srand(time(NULL));
-            make_random = true;
-            printf("Please wait, searching key is in progress...\n");
-        }
+        printf("Please supply the disk dump BEFORE the encryption\n");
+        return -1;
     }
 
     char veribuf_test[VERIBUF_SIZE];
