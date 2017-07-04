@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
         return -1;
     }
     key = weaken_key(key);
-    printf("wakened key (16 out of 32 bytes matters):\n");
+    printf("weakened key (16 out of 32 bytes matters):\n");
     hexdump(key, KEY_SIZE);
     printf("---\n");
     char veribuf_test[VERIBUF_SIZE];
